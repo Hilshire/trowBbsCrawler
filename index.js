@@ -13,6 +13,8 @@ const log = console.log;
 const sections = [];
 let title;
 
+let floor = 0;
+
 function main() {
     const url = getUrl();
     if (!checkoutUrl(url)) {
@@ -34,7 +36,7 @@ async function loadData(url, inloop) {
         }
     }).then(async res => {
         try {
-            const { totalPage } = analyseHtml(res.data);
+            const { totalPage } = analyseHtml(res.data, inloop);
             if (!inloop) {
                 await loop(totalPage, url);
             }
@@ -55,7 +57,7 @@ function checkoutUrl(url) {
     }
 }
 
-function analyseHtml(html) {
+function analyseHtml(html, inloop) {
     const $ = cheerio.load(html);
 
     removeUselessHtml($);
@@ -66,18 +68,30 @@ function analyseHtml(html) {
         if (i === 0) return;
         $(this).before('<hr />')
     })
+    // 修饰id与楼层
+    $('.xw1').each(function(i) {
+        if (floor === 0) return floor++;
+        $(this).text(`#${floor++}. ` + $(this).text())
+    })
     $('#thread_subject, .pcb, .xw1, hr').each(function() {
         let $node = $(this);
+
+        // 处理标题
+        if ($node.attr('id') === 'thread_subject') {
+            if (inloop) {
+                // 跳过，不推入数组
+                return;
+            } else {
+                $node = $(`<h1>${$node.text()}</h1>`);
+            }
+        }
+
         // 处理图片
         $node.find('img').each(function() {
             if ($(this).attr('file')) {
                 $(this).attr('src', $(this).attr('file'))
             }
         })
-        // 处理标题
-        if ($node.attr('id') === 'thread_subject') {
-            $node = $(`<h1>${$node.text()}</h1>`);
-        }
 
         // 推入数组
         sections.push($('<div>').append($node.clone()).html());
