@@ -1,8 +1,8 @@
 const fs = require('fs');
 const axios = require('axios').default;
 const TurndownService = require('turndown');
-const cheerio = require('cheerio');
 const rules = require('./rules');
+const analyseS1Html = require('./s1');
 
 const turndownService = new TurndownService();
 turndownService.addRule('username', rules.username);
@@ -11,9 +11,7 @@ const error = console.error;
 const log = console.log;
 
 const sections = [];
-let title;
-
-let floor = 0;
+let fileName;
 
 function main() {
     const url = getUrl();
@@ -22,7 +20,7 @@ function main() {
         process.exit();
     }
     loadData(url).finally(async () => {
-        await htmlToMd(title)
+        await htmlToMd(fileName)
             .then(() => console.log('写入完毕'), console.error);
         process.exit();
     });
@@ -36,7 +34,9 @@ async function loadData(url, inloop) {
         }
     }).then(async res => {
         try {
-            const { totalPage } = analyseHtml(res.data, inloop);
+            const { totalPage, content, title } = analyseS1Html(res.data, inloop);
+            fileName = title;
+            sections.push(content);
             if (!inloop) {
                 await loop(totalPage, url);
             }
@@ -57,75 +57,17 @@ function checkoutUrl(url) {
     }
 }
 
-function analyseHtml(html, inloop) {
-    const $ = cheerio.load(html);
-
-    removeUselessHtml($);
-    const totalPage = +getTotalPage($);
-    title = $('#thread_subject').text();
-    // 插入分隔符
-    $('.xw1').each(function(i) {
-        if (i === 0) return;
-        $(this).before('<hr />')
-    })
-    // 修饰id与楼层
-    $('.xw1').each(function(i) {
-        if (floor === 0) return floor++;
-        $(this).text(`#${floor++}. ` + $(this).text())
-    })
-    $('#thread_subject, .pcb, .xw1, hr').each(function() {
-        let $node = $(this);
-
-        // 处理标题
-        if ($node.attr('id') === 'thread_subject') {
-            if (inloop) {
-                // 跳过，不推入数组
-                return;
-            } else {
-                $node = $(`<h1>${$node.text()}</h1>`);
-            }
-        }
-
-        // 处理图片
-        $node.find('img').each(function() {
-            if ($(this).attr('file')) {
-                $(this).attr('src', $(this).attr('file'))
-            }
-        })
-
-        // 推入数组
-        sections.push($('<div>').append($node.clone()).html());
-    });
-    return {
-        title: $('#thread_subject').text(),
-        content: sections.join(''),
-        totalPage,
-    }
-}
-
-async function htmlToMd(title) {
+async function htmlToMd(fileName) {
     log('开始转换MD')
-    fs.writeFile(`./${title}.html`, sections.join(''), err => console.error);
+    fs.writeFile(`./result/${fileName}.html`, sections.join(''), err => console.error);
     const markdown = turndownService.turndown(sections.join(''));
     return new Promise((resolve, reject) => {
-        log(`开始写入文件: ./${title || 'empty'}.md`);
-        fs.writeFile(`./${title}.md`, markdown, function(err) {
+        log(`开始写入文件: ${fileName || 'empty'}.md`);
+        fs.writeFile(`./result/${fileName}.md`, markdown, function(err) {
             if (err) { reject(err) }
             resolve();
         });
     });
-}
-
-function removeUselessHtml($) {
-    $('.rate').remove();
-    $('h3.psth').remove();
-    $('p.mbn').remove();
-    $('.tip').remove();
-}
-
-function getTotalPage($) {
-    const text = $('#pgt').find('span').attr('title');
-    return text.match(/\d+/)[0];
 }
 
 async function loop(total, url) {
