@@ -1,0 +1,20 @@
+{
+  "name": "s1bbscrawler",
+  "version": "1.0.0",
+  "description": "a crawler for s1 bbs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "s1bbs",
+    "crawler"
+  ],
+  "author": "hilshire",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "cheerio": "^1.0.0-rc.5",
+    "turndown": "^7.0.0"
+  }
+}
