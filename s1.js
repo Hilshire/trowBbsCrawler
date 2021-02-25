@@ -8,6 +8,7 @@ function analyseHtml(html, inloop) {
 
     removeUselessHtml($);
     const totalPage = +getTotalPage($);
+    const nowPage = getNowPage($);
     title = $('#thread_subject').text();
     // 插入分隔符
     $('.xw1').each(function(i) {
@@ -46,6 +47,7 @@ function analyseHtml(html, inloop) {
         title: $('#thread_subject').text(),
         content: a.join(''),
         totalPage,
+        nowPage,
     }
 }
 
@@ -60,4 +62,9 @@ function getTotalPage($) {
     const text = $('#pgt').find('span').attr('title');
     return text.match(/\d+/)[0];
 }
+
+function getNowPage($) {
+    return +$('.pg').first().find('strong').text()
+}
+
 module.exports = analyseHtml;

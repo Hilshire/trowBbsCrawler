@@ -53,11 +53,18 @@ async function loadData(url, inloop) {
                     result = analyseAppleHtml(res.data, inloop, url);
                     break;
             }
-            const { totalPage, content, title } = result;
+            const { totalPage, nowPage, content, title } = result;
             fileName = title;
             sections.push(content);
             if (!inloop) {
-                // await loop(totalPage, url);
+                switch (type) {
+                    case TYPE.S1:
+                        await s1Loop(totalPage, nowPage, url, type);
+                        break;
+                    case TYPE.APPLE:
+                        await appleLoop(totalPage, nowPage, url, type);
+                        break; 
+                }
             }
         } catch (e) {
             error(e);
@@ -104,15 +111,23 @@ async function htmlToMd(fileName) {
     });
 }
 
-async function loop(total, url) {
+async function s1Loop(total, now, url, type) {
     const REG = /(.+thread-\d+-)(\d+)(-\d+.+)/;
-    let now = +REG.exec(url)[2];
     while (now && now < total) {
-        now++;
         const newUrl = url.replace(REG, (match, p1, p2, p3) => p1 + now + p3);
         log('读取新url: ', newUrl, '页数: ', +now, '总页数: ', total);
         await loadData(newUrl, true);
     }
+}
+
+async function appleLoop(total, now, url, type) {
+    const REG = /(.+topic=\d+\.)(\d+)/
+    while (now && now < total) {
+        now++;
+        const newUrl = url.replace(REG, (match, p1, p2) => p1 + (now-1) * 20);
+        log('读取新url: ', newUrl, '页数: ', +now, '总页数: ', total);
+        await loadData(newUrl, true);
+    } 
 }
 
 main();

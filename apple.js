@@ -7,16 +7,33 @@ function analyseHtml(html, inloop, url) {
     const a = [];
     url = new URL(url);
 
+    const totalPage = +getTotalPage($);
+    const nowPage = getNowPage($);
     removeUselessHtml($);
 
-    $('#top_subject, .post, .poster').each(function() {
+    $('#top_subject, .post, .poster, .attachments').each(function() {
         let $node = $(this);
+
+        // 处理标题
+        if ($node.attr('id') === 'top_subject') {
+            if (inloop) {
+                // 跳过，不推入数组
+                return;
+            } else {
+                $node = $(`<h1>${$node.text()}</h1>`);
+            }
+        }
 
         // 处理图片
         $node.find('img').each(function(i) {
             const $node = $(this);
-            if (!$node.attr('src')?.match(/http/)) {
-                $node.attr('src', `${url.origin}${$node.attr('src')}`);
+            const src = $node.attr('src')
+            if (!src?.match(/http/)) {
+                if (src[0] === '?') {
+                    $node.attr('src', `${url.origin}${url.pathname}${src}`);
+                } else {
+                    $node.attr('src', `${url.origin}${src}`)
+                }
             }
         })
 
@@ -42,12 +59,21 @@ function analyseHtml(html, inloop, url) {
     return {
         title: $('#top_subject').text(),
         content: a.join(''),
-        totalPage: 1,
+        totalPage,
+        nowPage,
     }
 }
 
 function removeUselessHtml($) {
     // $('hr').remove();
+}
+
+function getTotalPage($) {
+    return +$('.navPages').eq(-2).text();
+}
+
+function getNowPage($) {
+    return +$('.pagelinks').last().find('strong').first().text();
 }
 
 module.exports = analyseHtml;
