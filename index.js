@@ -1,12 +1,14 @@
 const fs = require('fs');
 const axios = require('axios').default;
 const TurndownService = require('turndown');
+const turndownPluginGfm = require('turndown-plugin-gfm')
 const rules = require('./rules');
 const TYPE = require('./type');
 const analyseS1Html = require('./s1');
 const analyseAppleHtml = require('./apple');
 
 const turndownService = new TurndownService();
+turndownService.use(turndownPluginGfm.gfm)
 
 const error = console.error;
 const log = console.log;
