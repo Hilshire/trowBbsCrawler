@@ -17,7 +17,7 @@ function analyseHtml(html, inloop, url) {
         }
     })
 
-    $('#top_subject, .post, .poster, hr').each(function() {
+    $('#top_subject, .post, .poster').each(function() {
         let $node = $(this);
 
         // 处理poster
@@ -39,7 +39,7 @@ function analyseHtml(html, inloop, url) {
 }
 
 function removeUselessHtml($) {
-    $('hr').remove();
+    // $('hr').remove();
 }
 
 module.exports = analyseHtml;

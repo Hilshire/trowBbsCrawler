@@ -1,19 +1,12 @@
 const fs = require('fs');
 const axios = require('axios').default;
 const TurndownService = require('turndown');
-// const HTMLtoDOCX = require('html-to-docx');
 const rules = require('./rules');
+const TYPE = require('./type');
 const analyseS1Html = require('./s1');
 const analyseAppleHtml = require('./apple');
 
-const TYPE = {
-    S1: 'S1',
-    APPLE: 'APPLE',
-    TROW: 'TROW',
-}
-
 const turndownService = new TurndownService();
-turndownService.addRule('username', rules.username);
 
 const error = console.error;
 const log = console.log;
@@ -22,15 +15,23 @@ const sections = [];
 let fileName;
 
 function main() {
-    const url = getUrl();
-    if (!checkoutUrl(url)) {
-        error('非法的S1url！');
-        process.exit();
+    try {
+        const url = getUrl();
+        const type = getUrlType(url);
+    
+        addTrundownRule(type);
+    
+        if (!checkoutUrl(url)) {
+            error('非法的S1url！');
+            process.exit();
+        }
+        loadData(url).catch(error).finally(async () => {
+            await htmlToMd(fileName).then(() => console.log('写入完毕'), console.error);
+            process.exit();
+        });
+    } catch (e) {
+        error(e)
     }
-    loadData(url).catch(error).finally(async () => {
-        await htmlToMd(fileName).then(() => console.log('写入完毕'), console.error);
-        process.exit();
-    });
 }
 
 async function loadData(url, inloop) {
@@ -80,6 +81,13 @@ function checkoutUrl(url) {
     }
 }
 
+function addTrundownRule(type) {
+    const rule = rules[type]
+    Object.keys(rule).forEach(key => {
+        turndownService.addRule(key, rule[key]);
+    });
+}
+
 async function htmlToMd(fileName) {
     if (sections.length === 0) 
         throw new Error('获取内容为空');
@@ -95,22 +103,6 @@ async function htmlToMd(fileName) {
         });
     });
 }
-
-// async function htmlToDoc(fileName) {
-//     if (sections.length === 0) 
-//     throw new Error('获取内容为空');
-
-//     log('开始转换DOC')
-//     fs.writeFile(`./result/${fileName}.html`, sections.join(''), err => console.error);
-//     const docxBuffer = await HTMLtoDOCX(sections.join(''));
-//     return new Promise((resolve, reject) => {
-//         log(`开始写入文件: ${fileName || 'empty'}.docx`);
-//         fs.writeFile(`./result/${fileName}.docx`, docxBuffer, function(err) {
-//             if (err) { reject(err) }
-//             resolve();
-//         });
-//     }); 
-// }
 
 async function loop(total, url) {
     const REG = /(.+thread-\d+-)(\d+)(-\d+.+)/;
