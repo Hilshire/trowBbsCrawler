@@ -14,6 +14,16 @@ const s1Rules = {
 };
 
 const appleRules = {
+    username: {
+        filter: 'a',
+        replacement: function(content, node) {
+            const $node = $(node.outerHTML)
+            if ($node.attr('title')?.match(/检视会员资料/)) {
+                return '###### ' + `[${content}](${$node.attr('href')})`;              
+            }
+            return `[${content}](${$node.attr('href')})`;
+        },
+    },
     color: {
         filter: 'span',
         replacement: function(content, node) {
