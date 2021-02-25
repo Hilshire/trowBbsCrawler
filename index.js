@@ -1,6 +1,7 @@
 const fs = require('fs');
 const axios = require('axios').default;
 const TurndownService = require('turndown');
+// const HTMLtoDOCX = require('html-to-docx');
 const rules = require('./rules');
 const analyseS1Html = require('./s1');
 const analyseAppleHtml = require('./apple');
@@ -27,8 +28,7 @@ function main() {
         process.exit();
     }
     loadData(url).catch(error).finally(async () => {
-        await htmlToMd(fileName)
-            .then(() => console.log('写入完毕'), console.error);
+        await htmlToMd(fileName).then(() => console.log('写入完毕'), console.error);
         process.exit();
     });
 }
@@ -46,10 +46,10 @@ async function loadData(url, inloop) {
             let result;
             switch (type) {
                 case TYPE.S1:
-                    result = analyseS1Html(res.data, inloop);
+                    result = analyseS1Html(res.data, inloop, url);
                     break;
                 case TYPE.APPLE:
-                    result = analyseAppleHtml(res.data, inloop);
+                    result = analyseAppleHtml(res.data, inloop, url);
                     break;
             }
             const { totalPage, content, title } = result;
@@ -95,6 +95,22 @@ async function htmlToMd(fileName) {
         });
     });
 }
+
+// async function htmlToDoc(fileName) {
+//     if (sections.length === 0) 
+//     throw new Error('获取内容为空');
+
+//     log('开始转换DOC')
+//     fs.writeFile(`./result/${fileName}.html`, sections.join(''), err => console.error);
+//     const docxBuffer = await HTMLtoDOCX(sections.join(''));
+//     return new Promise((resolve, reject) => {
+//         log(`开始写入文件: ${fileName || 'empty'}.docx`);
+//         fs.writeFile(`./result/${fileName}.docx`, docxBuffer, function(err) {
+//             if (err) { reject(err) }
+//             resolve();
+//         });
+//     }); 
+// }
 
 async function loop(total, url) {
     const REG = /(.+thread-\d+-)(\d+)(-\d+.+)/;
