@@ -29,7 +29,7 @@ function main() {
             process.exit();
         }
         loadData(url).catch(error).finally(async () => {
-            await htmlToMd(fileName).then(() => console.log('写入完毕'), console.error);
+            await htmlToMd(fileName, url).then(() => console.log('写入完毕'), console.error);
             process.exit();
         });
     } catch (e) {
@@ -107,11 +107,12 @@ function addTrundownRule(type) {
     });
 }
 
-async function htmlToMd(fileName) {
+async function htmlToMd(fileName, url) {
     if (sections.length === 0) 
         throw new Error('获取内容为空');
     
     log('开始转换MD')
+    sections.push(`<h5>原帖地址：${url}</h5>`);
     fs.writeFile(`./result/${fileName}.html`, sections.join(''), err => console.error);
     const markdown = turndownService.turndown(sections.join(''));
     return new Promise((resolve, reject) => {
