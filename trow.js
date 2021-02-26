@@ -1,9 +1,9 @@
 const cheerio = require('cheerio');
 
-
-function analyseHtml(html, inloop) {
+function analyseHtml(html, inloop, url) {
     const $ = cheerio.load(html);
     const a = [];
+    url = new URL(url);
 
     removeUselessHtml($);
     const isLastPage = getIsLastPage($);
@@ -15,7 +15,7 @@ function analyseHtml(html, inloop) {
         $(this).before('<hr />')
     })
 
-    $('.maintitle2, postdetails, .normalname, .postcolor3').each(function() {
+    $('.maintitle2 td:first-child, .postdetails, .normalname, .postcolor3').each(function() {
         let $node = $(this);
 
         // 处理标题
@@ -28,6 +28,25 @@ function analyseHtml(html, inloop) {
             }
         }
 
+        // 处理图片
+        $node.find('img').each(function(i) {
+            const $node = $(this);
+            const src = $node.attr('src')
+            if (!src?.match(/http/)) {
+                if (src[0] !== '/') {
+                    $node.attr('src', `${url.origin}/board/${src}`);
+                } else {
+                    $node.attr('src', `${url.origin}${src}`)
+                }
+            }
+        })
+
+        // 处理引用
+        $node.find('.quotemain').each(function(i) {
+            let $node = $(this);
+            $node.prev().after($('<blockquote>').append($node.clone()));
+            $node.remove();
+        })
 
         // 推入数组
         a.push($('<div>').append($node.clone()).html());
@@ -41,11 +60,12 @@ function analyseHtml(html, inloop) {
 }
 
 function removeUselessHtml($) {
-    $('postdetails').each(function(i) {
-        if ($(this).find('table')) {
+    $('.postdetails').each(function(i) {
+        if ($(this).find('table').length !== 0) {
             $(this).remove();
         }
     })
+    $('.quotetop').remove();
 }
 
 function getIsLastPage($) {

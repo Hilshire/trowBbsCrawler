@@ -47,9 +47,23 @@ const appleRules = {
     },
 }
 
+const trowRules = {
+    username: {
+        filter: 'a',
+        replacement: function(content, node) {
+            const $node = $(node.outerHTML)
+            if ($node.attr('href').match(/showuser/)) {
+                return '###### ' + `[${content}](${$node.attr('href')})`;              
+            }
+            return `[${content}](${$node.attr('href')})`;
+        },
+    },
+}
+
 const rules = {
     [TYPE.S1]: s1Rules,
     [TYPE.APPLE]: appleRules,
+    [TYPE.TROW]: trowRules,
 }
 
 module.exports = rules;
