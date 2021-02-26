@@ -6,6 +6,7 @@ const rules = require('./rules');
 const TYPE = require('./type');
 const analyseS1Html = require('./s1');
 const analyseAppleHtml = require('./apple');
+const analyseTrowHtml = require('./trow');
 
 const turndownService = new TurndownService();
 turndownService.use(turndownPluginGfm.gfm)
@@ -54,20 +55,27 @@ async function loadData(url, inloop) {
                 case TYPE.APPLE:
                     result = analyseAppleHtml(res.data, inloop, url);
                     break;
+                case TYPE.TROW:
+                    result = analyseTrowHtml(res.data, inloop, url);
             }
-            const { totalPage, nowPage, content, title } = result;
+            const { totalPage, nowPage, content, title, isLastPage } = result;
             fileName = title;
             sections.push(content);
             if (!inloop) {
                 switch (type) {
                     case TYPE.S1:
-                        await s1Loop(totalPage, nowPage, url, type);
+                        await s1Loop(totalPage, nowPage, url);
                         break;
                     case TYPE.APPLE:
-                        await appleLoop(totalPage, nowPage, url, type);
+                        await appleLoop(totalPage, nowPage, url);
                         break; 
+                    case TYPE.TROW:
+                        await trowLoop(isLastPage, nowPage, url);
+                        break;
                 }
             }
+
+            return result;
         } catch (e) {
             error(e);
         }
@@ -82,6 +90,7 @@ function getUrl() {
 function getUrlType(url) {
     if (url.match(/saraba1st/)) return TYPE.S1;
     if (url.match(/goddessfantasy/)) return TYPE.APPLE;
+    if (url.match(/trow/)) return TYPE.TROW;
 }
 
 function checkoutUrl(url) {
@@ -92,6 +101,7 @@ function checkoutUrl(url) {
 
 function addTrundownRule(type) {
     const rule = rules[type]
+    if (!rule) return;
     Object.keys(rule).forEach(key => {
         turndownService.addRule(key, rule[key]);
     });
@@ -113,7 +123,7 @@ async function htmlToMd(fileName) {
     });
 }
 
-async function s1Loop(total, now, url, type) {
+async function s1Loop(total, now, url) {
     const REG = /(.+thread-\d+-)(\d+)(-\d+.+)/;
     while (now && now < total) {
         const newUrl = url.replace(REG, (match, p1, p2, p3) => p1 + now + p3);
@@ -122,7 +132,7 @@ async function s1Loop(total, now, url, type) {
     }
 }
 
-async function appleLoop(total, now, url, type) {
+async function appleLoop(total, now, url) {
     const REG = /(.+topic=\d+\.)(\d+)/
     while (now && now < total) {
         now++;
@@ -130,6 +140,17 @@ async function appleLoop(total, now, url, type) {
         log('读取新url: ', newUrl, '页数: ', +now, '总页数: ', total);
         await loadData(newUrl, true);
     } 
+}
+
+async function trowLoop(isLastPage, now, url) {
+    const REG = /.+st=(\d+)/
+    while (!isLastPage) {
+        now++;
+        const newUrl = url.match(REG) ? url.replace(/(?<=st=)\d+/, (now - 1) * 15) : url + '&st=' + (now - 1) * 15;
+        log('读取新url: ', newUrl, '页数: ', +now);
+        const result = await loadData(newUrl, true);
+        isLastPage = result.isLastPage;
+    }  
 }
 
 main();
