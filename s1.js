@@ -60,11 +60,13 @@ function removeUselessHtml($) {
 
 function getTotalPage($) {
     const text = $('#pgt').find('span').attr('title');
+    if (!text) return 1;
     return text.match(/\d+/)[0];
 }
 
 function getNowPage($) {
-    return +$('.pg').first().find('strong').text()
+    const now = +$('.pg').first().find('strong').text()
+    return now || 1;
 }
 
 module.exports = analyseHtml;
