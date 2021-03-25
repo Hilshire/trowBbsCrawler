@@ -127,7 +127,7 @@ async function htmlToMd(fileName, url) {
 async function s1Loop(total, now, url) {
     const REG = /(.+thread-\d+-)(\d+)(-\d+.+)/;
     while (now && now < total) {
-        const newUrl = url.replace(REG, (match, p1, p2, p3) => p1 + now + p3);
+        const newUrl = url.replace(REG, (match, p1, p2, p3) => p1 + ++now + p3);
         log('读取新url: ', newUrl, '页数: ', +now, '总页数: ', total);
         await loadData(newUrl, true);
     }
