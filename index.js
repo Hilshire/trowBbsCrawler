@@ -117,6 +117,10 @@ async function htmlToMd(fileName, url) {
     const markdown = turndownService.turndown(sections.join(''));
     return new Promise((resolve, reject) => {
         log(`开始写入文件: ${fileName || 'empty'}.md`);
+        if (/主题: /.exec(fileName)) {
+            fileName = fileName.replace(/主题: /, '')
+            fileName = fileName.replace('/', '-')
+        }
         fs.writeFile(`./result/${fileName}.md`, markdown, function(err) {
             if (err) { reject(err) }
             resolve();
